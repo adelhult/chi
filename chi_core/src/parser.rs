@@ -62,15 +62,6 @@ where
             .then(args.delimited_by(just(Token::LParen), just(Token::RParen)))
             .map(|(name, args)| Expr::Const(name, args));
 
-        // Var    . Exp2 ::= Variable;
-        // Const  . Exp2 ::= Constructor "(" [Exp] ")";
-        // _      . Exp2 ::= "(" Exp ")";
-        let expr2 = var.or(constructor).or(expr
-            .clone()
-            .delimited_by(just(Token::LParen), just(Token::RParen)));
-
-        // Case   . Exp1 ::= "case" Exp "of" "{" [Br] "}";
-        // Branch . Br ::= Constructor "(" [Variable] ")" "->" Exp;
         let vars = var_name
             .clone()
             .separated_by(just(Token::Comma))
@@ -93,14 +84,6 @@ where
             )
             .map(|(e, branches)| Expr::Case(Box::new(e), branches));
 
-        // Apply  . Exp1 ::= Exp1 Exp2;
-        let apply = case
-            .clone()
-            .or(expr2.clone())
-            .foldl(expr2.clone().repeated(), |a, b| {
-                Expr::Apply(Box::new(a), Box::new(b))
-            }); // TODO: Double check that this actually worked!
-
         let lambda = just(Token::Backslash)
             .ignore_then(var_name)
             .then_ignore(just(Token::Period))
@@ -110,10 +93,17 @@ where
         let rec = just(Token::Rec)
             .ignore_then(var_name)
             .then_ignore(just(Token::Equals))
-            .then(expr)
+            .then(expr.clone())
             .map(|(var, e)| Expr::Rec(var, Box::new(e)));
 
-        expr2.or(apply.or(case)).or(lambda.or(rec))
-        // not totally sure about this one!
+        let atom = var.or(constructor).or(case).or(lambda).or(rec).or(expr
+            .clone()
+            .delimited_by(just(Token::LParen), just(Token::RParen)));
+
+        let apply = atom.clone().foldl(expr.clone().repeated(), |a, b| {
+            Expr::Apply(Box::new(a), Box::new(b))
+        });
+
+        apply.or(atom)
     })
 }
