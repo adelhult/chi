@@ -22,6 +22,10 @@ pub enum Token<'a> {
     #[token("rec")]
     Rec,
 
+    // Used in the meta languages
+    #[token("let")]
+    Let,
+
     #[token("(")]
     LParen,
 
@@ -76,6 +80,7 @@ impl<'a> fmt::Display for Token<'a> {
             Token::Arrow => write!(f, "->"),
             Token::Error => write!(f, "<error>"),
             Token::Comment => write!(f, "<comment>"),
+            Token::Let => write!(f, "let"),
         }
     }
 }

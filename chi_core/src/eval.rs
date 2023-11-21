@@ -3,7 +3,7 @@
 /// and also the Agda specification: https://www.cse.chalmers.se/~nad/listings/chi/Chi.html
 use crate::{
     parser::{Branch, ConstName, VarName},
-    Expr,
+    Expr, Program,
 };
 use Expr::*;
 
@@ -15,27 +15,34 @@ pub enum Error {
     Crash(String), // TODO, replace with multiple variants, also keep track of the source position
 }
 
-fn substitute(var: &VarName, expr: Expr, replacement: &Expr) -> Expr {
+fn lookup(const_name: &ConstName, branches: &[Branch]) -> Option<Branch> {
+    branches
+        .iter()
+        .find(|Branch(c, ..)| c == const_name)
+        .cloned()
+}
+
+fn substitute(var: &VarName, replacement: &Expr, expr: Expr) -> Expr {
     match expr {
         Apply(e1, e2) => Apply(
-            Box::new(substitute(var, *e1, replacement)),
-            Box::new(substitute(var, *e2, replacement)),
+            Box::new(substitute(var, replacement, *e1)),
+            Box::new(substitute(var, replacement, *e2)),
         ),
         Lambda(x, e) => {
             let e = if x == *var {
                 // The name `var` is bound in this expression, so we stop substituting
                 e
             } else {
-                Box::new(substitute(var, *e, replacement))
+                Box::new(substitute(var, replacement, *e))
             };
 
             Lambda(x, e)
         }
         Case(e, branches) => Case(
-            Box::new(substitute(var, *e, replacement)),
+            Box::new(substitute(var, replacement, *e)),
             branches
                 .into_iter()
-                .map(|b| substitute_branch(var, b, replacement))
+                .map(|b| substitute_branch(var, replacement, b))
                 .collect(),
         ),
         Rec(x, e) => {
@@ -43,7 +50,7 @@ fn substitute(var: &VarName, expr: Expr, replacement: &Expr) -> Expr {
                 // The name `var` is bound in this expression, so we stop substituting
                 e
             } else {
-                Box::new(substitute(var, *e, replacement))
+                Box::new(substitute(var, replacement, *e))
             };
 
             Rec(x, e)
@@ -58,33 +65,46 @@ fn substitute(var: &VarName, expr: Expr, replacement: &Expr) -> Expr {
         Const(c, es) => Const(
             c,
             es.into_iter()
-                .map(|e| substitute(var, e, replacement))
+                .map(|e| substitute(var, replacement, e))
                 .collect(),
         ),
     }
 }
 
-fn substitute_branch(var: &VarName, Branch(c, xs, e): Branch, replacement: &Expr) -> Branch {
+fn substitute_branch(var: &VarName, replacement: &Expr, Branch(c, xs, e): Branch) -> Branch {
     // Check if the branch binds to the same variable name, if not we recursivly continue with the substitution
     if xs.contains(&var) {
         Branch(c, xs, e)
     } else {
-        Branch(c, xs, substitute(var, e, replacement))
+        Branch(c, xs, substitute(var, replacement, e))
     }
 }
 
-fn lookup(const_name: &ConstName, branches: &[Branch]) -> Option<Branch> {
-    branches
-        .iter()
-        .find(|Branch(c, ..)| c == const_name)
-        .cloned()
+// TODO: Convert a program to a single Chi expression using substitutin
+fn substitute_program(var: &VarName, replacement: &Expr, program: Program) -> Program {
+    match program {
+        Program::Let(x, rhs, rest) => Program::Let(
+            x,
+            substitute(&var, replacement, rhs),
+            Box::new(substitute_program(&var, replacement, *rest)),
+        ),
+        Program::Expr(expr) => Program::Expr(substitute(var, replacement, expr)),
+    }
 }
 
-pub fn eval(expr: Expr) -> Result<Expr, Error> {
-    eval_impl(expr, 0)
+fn program_to_expr(program: Program) -> Expr {
+    match program {
+        Program::Let(var, rhs, rest) => program_to_expr(substitute_program(&var, &rhs, *rest)),
+        Program::Expr(expr) => expr,
+    }
 }
 
-fn eval_impl(expr: Expr, depth: u32) -> Result<Expr, Error> {
+pub fn eval(program: Program) -> Result<Expr, Error> {
+    let expr = program_to_expr(program);
+    eval_expr(expr, 0)
+}
+
+fn eval_expr(expr: Expr, depth: u32) -> Result<Expr, Error> {
     if depth >= MAX_DEPTH {
         return Err(Error::Crash(
             "Exceeded max depth, expression is assumed to not terminate".into(),
@@ -93,16 +113,16 @@ fn eval_impl(expr: Expr, depth: u32) -> Result<Expr, Error> {
 
     match expr {
         Apply(e1, e2) => {
-            let Lambda(x, e) = eval_impl(*e1, depth + 1)? else {
+            let Lambda(x, e) = eval_expr(*e1, depth + 1)? else {
                 return Err(Error::Crash(
                     "LHS of application must be a lambda expression".into(),
                 ));
             };
-            eval_impl(substitute(&x, eval_impl(*e2, depth + 1)?, &e), depth + 1)
+            eval_expr(substitute(&x, &eval_expr(*e2, depth + 1)?, *e), depth + 1)
         }
         Lambda(..) => Ok(expr),
         Case(e, branches) => {
-            let Const(constructor_name, es) = eval_impl(*e, depth + 1)? else {
+            let Const(constructor_name, es) = eval_expr(*e, depth + 1)? else {
                 return Err(Error::Crash(
                     "Expected constructor in case expression".into(),
                 ));
@@ -122,16 +142,16 @@ fn eval_impl(expr: Expr, depth: u32) -> Result<Expr, Error> {
             let subst_expr = xs
                 .iter()
                 .zip(es)
-                .rfold(e, |e, (var, replacement)| substitute(var, e, &replacement));
+                .rfold(e, |e, (var, replacement)| substitute(var, &replacement, e));
 
-            eval_impl(subst_expr, depth + 1)
+            eval_expr(subst_expr, depth + 1)
         }
-        Rec(x, e) => eval_impl(substitute(&x, Rec(x.clone(), e.clone()), &e), depth + 1),
+        Rec(x, e) => eval_expr(substitute(&x, &Rec(x.clone(), e.clone()), *e), depth + 1),
         Var(x) => Err(Error::Crash(format!(
             "Not a closed expression, variable '{x}' is not bound."
         ))),
         Const(c, es) => {
-            let es: Result<Vec<_>, _> = es.into_iter().map(|e| eval_impl(e, depth + 1)).collect();
+            let es: Result<Vec<_>, _> = es.into_iter().map(|e| eval_expr(e, depth + 1)).collect();
             Ok(Const(c, es?))
         }
     }

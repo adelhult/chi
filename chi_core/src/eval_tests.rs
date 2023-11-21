@@ -79,3 +79,35 @@ fn application() {
         Expr::Lambda(x.clone(), Box::new(Expr::Var(x)))
     );
 }
+
+#[test]
+fn application_left_assoc() {
+    let program = parse(
+        r#"
+        (\_. \x. x) Foo() Bar() 
+    "#,
+    );
+    let expr = eval(program.unwrap()).unwrap();
+    assert_eq!(expr, Expr::Const(ConstName("Bar".into()), vec![]))
+}
+
+#[test]
+fn sample_program_equiv() {
+    let src = r#"
+    let foo = rec foo = \m. \n. case m of
+    { Zero() -> case n of
+      { Zero() -> True()
+      ; Suc(n) -> False()
+      }
+    ; Suc(m) -> case n of
+      { Zero() -> False()
+      ; Suc(n) -> foo m n
+      }
+    };
+
+    foo Suc(Zero()) Suc(Suc(Zero()))
+    "#;
+    let program = dbg!(parse(src)).unwrap();
+    let expr = dbg!(eval(program)).unwrap();
+    assert_eq!(expr, Expr::Const(ConstName("False".into()), vec![]))
+}

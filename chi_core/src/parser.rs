@@ -36,7 +36,15 @@ pub enum Expr {
     Const(ConstName, Vec<Self>),
 }
 
-pub fn parse(source: &str) -> Result<Expr, Vec<Rich<'_, Token<'_>, SimpleSpan, &str>>> {
+/// A layer on top of the Chi language that
+/// allows Chi expressions to be assigned to meta variables
+#[derive(Debug, PartialEq, Clone)]
+pub enum Program {
+    Let(VarName, Expr, Box<Self>),
+    Expr(Expr),
+}
+
+pub fn parse(source: &str) -> Result<Program, Vec<Rich<'_, Token<'_>, SimpleSpan, &str>>> {
     let token_iter = Token::lexer(source)
         .spanned()
         // Convert lexer errors into a Token::Error
@@ -45,20 +53,17 @@ pub fn parse(source: &str) -> Result<Expr, Vec<Rich<'_, Token<'_>, SimpleSpan, &
     let end_of_input: SimpleSpan = (source.len()..source.len()).into();
     let token_stream = Stream::from_iter(token_iter).spanned(end_of_input);
 
-    expr_parser()
-        .then_ignore(end())
-        .parse(token_stream)
-        .into_result()
+    program_parser().parse(token_stream).into_result()
 }
 
-fn expr_parser<'a, I>() -> impl Parser<'a, I, Expr, extra::Err<Rich<'a, Token<'a>>>>
+fn program_parser<'a, I>() -> impl Parser<'a, I, Program, extra::Err<Rich<'a, Token<'a>>>>
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     let constructor_name = select! { Token::ConstName(name) => ConstName(name.to_string()) };
     let var_name = select! { Token::VarName(name) => VarName(name.to_string())};
 
-    recursive(|expr| {
+    let expr = recursive(|expr| {
         let var = var_name.map(|var| Expr::Var(var));
 
         let args = expr
@@ -108,10 +113,22 @@ where
             .clone()
             .delimited_by(just(Token::LParen), just(Token::RParen)));
 
-        let apply = atom.clone().foldl(expr.clone().repeated(), |a, b| {
+        let apply = atom.clone().foldl(atom.clone().repeated(), |a, b| {
             Expr::Apply(Box::new(a), Box::new(b))
         });
 
-        apply.or(atom)
+        apply
+    });
+
+    recursive(|program| {
+        let let_ = just(Token::Let)
+            .ignore_then(var_name)
+            .then_ignore(just(Token::Equals))
+            .then(expr.clone())
+            .then_ignore(just(Token::Semicolon))
+            .then(program)
+            .map(|((name, e), rest)| Program::Let(name, e, Box::new(rest)));
+
+        let_.or(expr.map(|e| Program::Expr(e))).then_ignore(end())
     })
 }

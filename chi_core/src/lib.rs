@@ -8,10 +8,9 @@ mod eval_tests;
 mod parser_tests;
 
 pub use eval::eval;
-pub use parser::{parse, Expr};
+pub use parser::{parse, Expr, Program};
 
 /*
 TODO:
 - Add wasm bindings
-- Extend with a meta-language/preprocessor
 */
