@@ -91,7 +91,6 @@ fn eval_impl(expr: Expr, depth: u32) -> Result<Expr, Error> {
         ));
     }
 
-    // TODO: Keep track of depth to stop non-terminating functions with a nice error message
     match expr {
         Apply(e1, e2) => {
             let Lambda(x, e) = eval_impl(*e1, depth + 1)? else {

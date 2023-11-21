@@ -12,8 +12,6 @@ pub use parser::{parse, Expr};
 
 /*
 TODO:
-- Fix application bug
-- Add evaluator
 - Add wasm bindings
 - Extend with a meta-language/preprocessor
 */
