@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::lexer::Token;
 use chumsky::{
     input::{Stream, ValueInput},
@@ -5,20 +7,26 @@ use chumsky::{
 };
 use logos::Logos;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ConstName(pub(crate) String);
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct VarName(pub(crate) String);
 
-#[derive(Debug, PartialEq)]
+impl fmt::Display for VarName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct Branch(
     pub(crate) ConstName,
     pub(crate) Vec<VarName>,
     pub(crate) Expr,
 );
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
     Apply(Box<Self>, Box<Self>),
     Lambda(VarName, Box<Self>),
