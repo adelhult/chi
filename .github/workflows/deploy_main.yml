@@ -46,7 +46,7 @@ jobs:
       - name: Run vite dev task before building
         run: grep -m 1 "VITE" <(npm run dev) # this is such a hack but it makes the vite wasm-pack plugin happy
       - name: Build static site
-        run: npm run build --base=/chi
+        run: npm run build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
