@@ -120,7 +120,7 @@ where
         apply
     });
 
-    recursive(|program| {
+    let program = recursive(|program| {
         let let_ = just(Token::Let)
             .ignore_then(var_name)
             .then_ignore(just(Token::Equals))
@@ -129,6 +129,8 @@ where
             .then(program)
             .map(|((name, e), rest)| Program::Let(name, e, Box::new(rest)));
 
-        let_.or(expr.map(|e| Program::Expr(e))).then_ignore(end())
-    })
+        let_.or(expr.map(|e| Program::Expr(e)))
+    });
+
+    program.then_ignore(end())
 }
