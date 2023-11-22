@@ -56,7 +56,7 @@ pub enum Token<'a> {
     #[token("->")]
     Arrow,
 
-    #[regex(r"--[^\n]*")]
+    #[regex(r"--[^\n]*", logos::skip)]
     Comment,
 }
 
