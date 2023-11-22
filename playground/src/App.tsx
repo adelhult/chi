@@ -53,25 +53,39 @@ const Output = styled.pre`
   border-top: 1px solid #beb3a8;
   padding: 0.5rem;
   padding-left: 1rem;
-  height: 200px;
+  height: 225px;
   width: 100%;
   margin:0;
   font-size: 0.9rem;
 `;
 
 const SAMPLE_PROGRAM = `
-let foo = rec foo = \\m. \\n. case m of
+-- Welcome to the χ playground!
+
+-- Small example program
+-- Note: meta variables and assignments (let name = <some expr>;) are supported 
+let add = rec add = \\x. \\y. case x of
+{ Zero() -> y
+; Suc(n) -> Suc(add n y)
+};
+
+let zero = Zero();
+
+let three = Suc(Suc(Suc(Zero())));
+
+let equals = rec equals = \\m. \\n. case m of
 { Zero() -> case n of
   { Zero() -> True()
   ; Suc(n) -> False()
   }
 ; Suc(m) -> case n of
   { Zero() -> False()
-  ; Suc(n) -> foo m n
+  ; Suc(n) -> equals m n
   }
 };
 
-foo Suc(Zero()) Suc(Suc(Zero()))
+equals (add zero three) three
+-- the value of the last expression is printed (each time the contents of the editor changes) in window below
 `;
 
 function App() {
@@ -110,7 +124,7 @@ function App() {
       </ol>
     </Nav>
     <MainView>
-    <Editor height="calc(100vh - 70px - 200px)" width="100vw" defaultLanguage="" defaultValue={SAMPLE_PROGRAM} onChange={editorChange}/>
+    <Editor height="calc(100vh - 70px - 225px)" width="100vw" defaultLanguage="" defaultValue={SAMPLE_PROGRAM} onChange={editorChange}/>
     <Output dangerouslySetInnerHTML={{__html: output}}>
 
     </Output>
