@@ -1,29 +1,62 @@
 import { Editor, OnChange } from "@monaco-editor/react";
-import {useState, useEffect} from "react";
+import {useState, useEffect, useMemo} from "react";
 import init, {run} from "chi_web";
 import styled from "styled-components";
+import Convert from "ansi-to-html";
 
 const MainView = styled.main`
   display: flex;
+  flex-direction: column;
   width:100%;
 `;
 
 const Nav = styled.nav`
-  width: 100%;
-  height: 150px;
   box-sizing: border-box;
   overflow: auto;
-  padding: 1rem;
-
-  border-bottom: 1px solid black;
+  height: 70px;
+  padding-left: 1rem;
+  border-bottom: 1px solid #beb3a8;
+  background: #FFFCF9;
+  display: flex;
+  align-items: center;
+  gap: 3rem;
 
   & > ol {
     list-style: none;
     margin: 0;
     padding: 0;
     display: flex;
-    gap: 1rem;
+    gap: 1.5rem;
+    font-size: 0.9rem;
   }
+ 
+`;
+
+const Logo = styled.div`
+  display: inline-flex;
+  align-items: center;
+  font-size: 1.5rem;
+  gap: 0.3rem;
+  
+  & .chi {
+    position: relative;
+    font-family: 'Noto Serif', serif;
+    font-size: 3rem;
+    bottom: 0.6rem;
+  }
+`
+
+const Output = styled.pre`
+  overflow: auto;
+  box-sizing: border-box;
+  position: relative;
+  border-top: 1px solid #beb3a8;
+  padding: 0.5rem;
+  padding-left: 1rem;
+  height: 200px;
+  width: 100%;
+  margin:0;
+  font-size: 0.9rem;
 `;
 
 const SAMPLE_PROGRAM = `
@@ -42,15 +75,22 @@ foo Suc(Zero()) Suc(Suc(Zero()))
 `;
 
 function App() {
+  const convert = useMemo(() => new Convert(), []);
+
   useEffect(() => {
     init().then(() => {
       setWasmLoaded(true)
     });
   }, []);
+
   
   const editorChange: OnChange = (value, event) => {
-    const result = run(value ?? "");
-    setOutput(result);
+    try {
+      const result = run(value ?? " ");
+      setOutput(result);
+    } catch (error) {
+      setOutput(convert.toHtml((error as string) ?? ""));
+    }
   };
 
 
@@ -59,7 +99,10 @@ function App() {
   return wasmLoaded && (
     <>
     <Nav>
-      <h1>χ playground</h1>
+      <Logo>
+        <span className="chi">χ</span>
+        playground
+      </Logo>
       <ol>
         <a href="https://www.cse.chalmers.se/~nad/listings/chi/README.html"><li>Agda implementation</li></a>
         <a href="https://chalmers.instructure.com/courses/26348/file_contents/course%20files/reading/The_language_chi.pdf"><li>Description (PDF)</li></a>
@@ -67,10 +110,10 @@ function App() {
       </ol>
     </Nav>
     <MainView>
-    <Editor height="calc(100vh - 150px)" width="60vw" defaultLanguage="" defaultValue={SAMPLE_PROGRAM} onChange={editorChange}/>
-    <div>
-      {output}
-    </div>
+    <Editor height="calc(100vh - 70px - 200px)" width="100vw" defaultLanguage="" defaultValue={SAMPLE_PROGRAM} onChange={editorChange}/>
+    <Output dangerouslySetInnerHTML={{__html: output}}>
+
+    </Output>
     </MainView>
 
     </>

@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 logos = "0.13.0"
 chumsky = "1.0.0-alpha.6" # playing around with the alpha
+ariadne = "0.3.0"
