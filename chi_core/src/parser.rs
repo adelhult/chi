@@ -8,12 +8,12 @@ use chumsky::{
 use logos::Logos;
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct ConstName(pub(crate) String);
+pub struct Constructor(pub(crate) String);
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct VarName(pub(crate) String);
+pub struct Variable(pub(crate) String);
 
-impl fmt::Display for VarName {
+impl fmt::Display for Variable {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
@@ -21,26 +21,26 @@ impl fmt::Display for VarName {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Branch(
-    pub(crate) ConstName,
-    pub(crate) Vec<VarName>,
+    pub(crate) Constructor,
+    pub(crate) Vec<Variable>,
     pub(crate) Expr,
 );
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
     Apply(Box<Self>, Box<Self>),
-    Lambda(VarName, Box<Self>),
+    Lambda(Variable, Box<Self>),
     Case(Box<Self>, Vec<Branch>),
-    Rec(VarName, Box<Self>),
-    Var(VarName),
-    Const(ConstName, Vec<Self>),
+    Rec(Variable, Box<Self>),
+    Var(Variable),
+    Const(Constructor, Vec<Self>),
 }
 
 /// A layer on top of the Chi language that
 /// allows Chi expressions to be assigned to meta variables
 #[derive(Debug, PartialEq, Clone)]
 pub enum Program {
-    Let(VarName, Expr, Box<Self>),
+    Let(Variable, Expr, Box<Self>),
     Expr(Expr),
 }
 
@@ -60,8 +60,8 @@ fn program_parser<'a, I>() -> impl Parser<'a, I, Program, extra::Err<Rich<'a, To
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
-    let constructor_name = select! { Token::ConstName(name) => ConstName(name.to_string()) };
-    let var_name = select! { Token::VarName(name) => VarName(name.to_string())};
+    let constructor_name = select! { Token::ConstName(name) => Constructor(name.to_string()) };
+    let var_name = select! { Token::VarName(name) => Variable(name.to_string())};
 
     let expr = recursive(|expr| {
         let var = var_name.map(|var| Expr::Var(var));

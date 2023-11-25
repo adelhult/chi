@@ -2,7 +2,7 @@
 /// Based on "Models of Computation: Section 6, An interpreter for χ in χ", by Bengt Nordström and Nils Anders Danielsson
 /// and also the Agda specification: https://www.cse.chalmers.se/~nad/listings/chi/Chi.html
 use crate::{
-    parser::{Branch, ConstName, VarName},
+    parser::{Branch, Constructor, Variable},
     Expr, Program,
 };
 use Expr::*;
@@ -15,14 +15,14 @@ pub enum Error {
     Crash(String), // TODO, replace with multiple variants, also keep track of the source position
 }
 
-fn lookup(const_name: &ConstName, branches: &[Branch]) -> Option<Branch> {
+fn lookup(const_name: &Constructor, branches: &[Branch]) -> Option<Branch> {
     branches
         .iter()
         .find(|Branch(c, ..)| c == const_name)
         .cloned()
 }
 
-fn substitute(var: &VarName, replacement: &Expr, expr: Expr) -> Expr {
+fn substitute(var: &Variable, replacement: &Expr, expr: Expr) -> Expr {
     match expr {
         Apply(e1, e2) => Apply(
             Box::new(substitute(var, replacement, *e1)),
@@ -71,7 +71,7 @@ fn substitute(var: &VarName, replacement: &Expr, expr: Expr) -> Expr {
     }
 }
 
-fn substitute_branch(var: &VarName, replacement: &Expr, Branch(c, xs, e): Branch) -> Branch {
+fn substitute_branch(var: &Variable, replacement: &Expr, Branch(c, xs, e): Branch) -> Branch {
     // Check if the branch binds to the same variable name, if not we recursivly continue with the substitution
     if xs.contains(&var) {
         Branch(c, xs, e)
@@ -81,7 +81,7 @@ fn substitute_branch(var: &VarName, replacement: &Expr, Branch(c, xs, e): Branch
 }
 
 // TODO: Convert a program to a single Chi expression using substitutin
-fn substitute_program(var: &VarName, replacement: &Expr, program: Program) -> Program {
+fn substitute_program(var: &Variable, replacement: &Expr, program: Program) -> Program {
     match program {
         Program::Let(x, rhs, rest) => Program::Let(
             x,
