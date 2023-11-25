@@ -1,8 +1,10 @@
-import { Editor, OnChange } from "@monaco-editor/react";
+import { Editor, OnChange, OnMount } from "@monaco-editor/react";
 import {useState, useEffect, useMemo} from "react";
 import init, {run} from "chi_web";
 import styled from "styled-components";
 import Convert from "ansi-to-html";
+import readGist from "./gist";
+import WELCOME_TEXT from "./welcomeText";
 
 const MainView = styled.main`
   display: flex;
@@ -59,44 +61,27 @@ const Output = styled.pre`
   font-size: 0.9rem;
 `;
 
-const SAMPLE_PROGRAM = `
--- Welcome to the χ playground!
-
--- Small example program
--- Note: meta variables and assignments (let name = <some expr>;) are supported 
-let add = rec add = \\x. \\y. case x of
-{ Zero() -> y
-; Suc(n) -> Suc(add n y)
-};
-
-let zero = Zero();
-
-let three = Suc(Suc(Suc(Zero())));
-
-let equals = rec equals = \\m. \\n. case m of
-{ Zero() -> case n of
-  { Zero() -> True()
-  ; Suc(n) -> False()
-  }
-; Suc(m) -> case n of
-  { Zero() -> False()
-  ; Suc(n) -> equals m n
-  }
-};
-
-equals (add zero three) three
--- the value of the last expression is printed (each time the contents of the editor changes) in window below
-`;
-
 function App() {
   const convert = useMemo(() => new Convert(), []);
 
   useEffect(() => {
+    // Load the wasm module
     init().then(() => {
       setWasmLoaded(true)
     });
   }, []);
 
+  const editorMount: OnMount = (editor, monaco) => {
+    // Once the editor has mounted, check if there is a gist id in the url
+    // if so, load the gist otherwise show the welcome text
+    const params = new URLSearchParams(window.location.search);
+    const gistId = params.get("gist");
+    if (gistId) {
+      const text = readGist(gistId).then(text => editor.setValue(text));
+    } else {
+      editor.setValue(WELCOME_TEXT);
+    }
+  }
   
   const editorChange: OnChange = (value, event) => {
     try {
@@ -106,7 +91,6 @@ function App() {
       setOutput(convert.toHtml((error as string) ?? ""));
     }
   };
-
 
   const [output, setOutput] = useState("");
   const [wasmLoaded, setWasmLoaded] = useState(false);
@@ -124,7 +108,7 @@ function App() {
       </ol>
     </Nav>
     <MainView>
-    <Editor height="calc(100vh - 70px - 225px)" width="100vw" defaultLanguage="" defaultValue={SAMPLE_PROGRAM} onChange={editorChange}/>
+    <Editor height="calc(100vh - 70px - 225px)" width="100vw" defaultLanguage="" onChange={editorChange} onMount={editorMount}/>
     <Output dangerouslySetInnerHTML={{__html: output}}>
 
     </Output>
