@@ -8,7 +8,7 @@ import WELCOME_TEXT from "./welcomeText";
 
 const MainView = styled.main`
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   width:100%;
 `;
 
@@ -48,17 +48,33 @@ const Logo = styled.div`
   }
 `
 
-const Output = styled.pre`
-  overflow: auto;
+const Output = styled.div`
   box-sizing: border-box;
   position: relative;
-  border-top: 1px solid #beb3a8;
-  padding: 0.5rem;
-  padding-left: 1rem;
-  height: 225px;
-  width: 100%;
-  margin:0;
-  font-size: 0.9rem;
+  padding: 0;
+  margin: 0;
+  height: calc(100vh - 70px);
+  width: 40vw;
+  display: flex;
+  flex-direction: column;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+
+  & div {
+    padding-bottom: 0.5rem;
+    padding-top: 0.5rem;
+  }
+
+  & pre {
+    border-top: 1px solid #beb3a8;
+    overflow: auto;
+    margin: 0;
+    padding: 0;
+    padding-top: 0.5rem;
+    height: 100%;
+    box-sizing: border-box;
+    font-size: 0.9rem;
+  }
 `;
 
 function App() {
@@ -108,9 +124,10 @@ function App() {
       </ol>
     </Nav>
     <MainView>
-    <Editor height="calc(100vh - 70px - 225px)" width="100vw" defaultLanguage="" onChange={editorChange} onMount={editorMount}/>
-    <Output dangerouslySetInnerHTML={{__html: output}}>
-
+    <Editor height="calc(100vh - 70px)" width="60vw" defaultLanguage="" onChange={editorChange} onMount={editorMount}/>
+    <Output>
+      <div>Output</div>
+      <pre dangerouslySetInnerHTML={{__html: output}}></pre>
     </Output>
     </MainView>
 

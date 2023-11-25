@@ -24,7 +24,7 @@ let equals = rec equals = \\m. \\n. case m of
 };
 
 equals (add zero three) three
--- the value of the last expression is printed (each time the contents of the editor changes) in window below
+-- the value of the last expression is printed in the right window (each time the contents of the editor changes).
 `;
 
 export default WELCOME_TEXT;
