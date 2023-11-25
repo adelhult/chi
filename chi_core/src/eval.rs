@@ -3,17 +3,13 @@
 /// and also the Agda specification: https://www.cse.chalmers.se/~nad/listings/chi/Chi.html
 use crate::{
     parser::{Branch, Constructor, Variable},
-    Expr, Program,
+    Error,
+    Expr::{self, *},
+    Program,
 };
-use Expr::*;
 
 // NOTE: This is of course a very low limit, I should make it possible to set this dynamically when calling eval
 const MAX_DEPTH: u32 = 250;
-
-#[derive(Debug)]
-pub enum Error {
-    Crash(String), // TODO, replace with multiple variants, also keep track of the source position
-}
 
 fn lookup(const_name: &Constructor, branches: &[Branch]) -> Option<Branch> {
     branches
@@ -80,7 +76,7 @@ fn substitute_branch(var: &Variable, replacement: &Expr, Branch(c, xs, e): Branc
     }
 }
 
-// TODO: Convert a program to a single Chi expression using substitutin
+// Convert a meta program into a single Chi expression using substitution
 fn substitute_program(var: &Variable, replacement: &Expr, program: Program) -> Program {
     match program {
         Program::Let(x, rhs, rest) => Program::Let(
@@ -106,37 +102,29 @@ pub fn eval(program: Program) -> Result<Expr, Error> {
 
 fn eval_expr(expr: Expr, depth: u32) -> Result<Expr, Error> {
     if depth >= MAX_DEPTH {
-        return Err(Error::Crash(
-            "Exceeded max depth, expression is assumed to not terminate".into(),
-        ));
+        return Err("Exceeded max depth, expression is assumed to not terminate".into());
     }
 
     match expr {
         Apply(e1, e2) => {
             let Lambda(x, e) = eval_expr(*e1, depth + 1)? else {
-                return Err(Error::Crash(
-                    "LHS of application must be a lambda expression".into(),
-                ));
+                return Err("LHS of application must be a lambda expression".into());
             };
             eval_expr(substitute(&x, &eval_expr(*e2, depth + 1)?, *e), depth + 1)
         }
         Lambda(..) => Ok(expr),
         Case(e, branches) => {
             let Const(constructor_name, es) = eval_expr(*e, depth + 1)? else {
-                return Err(Error::Crash(
-                    "Expected constructor in case expression".into(),
-                ));
+                return Err("Expected constructor in case expression".into());
             };
 
             let Some(Branch(_, xs, e)) = lookup(&constructor_name, &branches) else {
-                return Err(Error::Crash("No matching constructor name".into()));
+                return Err("No matching constructor name".into());
             };
 
             // Ensure that xs and es are the same arity
             if xs.len() != es.len() {
-                return Err(Error::Crash(
-                    "Constructor application in branch has wrong arity".into(),
-                ));
+                return Err("Constructor application in branch has wrong arity".into());
             }
 
             let subst_expr = xs
@@ -147,9 +135,7 @@ fn eval_expr(expr: Expr, depth: u32) -> Result<Expr, Error> {
             eval_expr(subst_expr, depth + 1)
         }
         Rec(x, e) => eval_expr(substitute(&x, &Rec(x.clone(), e.clone()), *e), depth + 1),
-        Var(x) => Err(Error::Crash(format!(
-            "Not a closed expression, variable '{x}' is not bound."
-        ))),
+        Var(x) => Err(format!("Not a closed expression, variable '{x}' is not bound.").into()),
         Const(c, es) => {
             let es: Result<Vec<_>, _> = es.into_iter().map(|e| eval_expr(e, depth + 1)).collect();
             Ok(Const(c, es?))

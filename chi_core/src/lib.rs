@@ -1,5 +1,6 @@
 use ariadne::{Color, Label, Report, ReportKind, Source};
 
+mod error;
 mod eval;
 mod lexer;
 mod parser;
@@ -9,6 +10,7 @@ mod eval_tests;
 #[cfg(test)]
 mod parser_tests;
 
+pub use error::Error;
 pub use eval::eval;
 pub use parser::{parse, Expr, Program};
 
@@ -23,7 +25,7 @@ pub fn run(source: &str) -> Result<String, String> {
     match parse(source) {
         Ok(program) => match eval(program) {
             // TODO: Add nicer evaulation errors, also using ariadne
-            Err(eval_error) => Err(format!("{eval_error:?}")),
+            Err(eval_error) => Err(format!(r#"<span class="error">{eval_error}</span>"#)),
             // TODO: Add pretty printer for expressions (and the option to choose between abstract and concrete syntax)
             Ok(value) => Ok(format!("{value:#?}")),
         },
