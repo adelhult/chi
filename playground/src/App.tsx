@@ -151,6 +151,12 @@ const PrinterOptions= ({onChange, value}: PrinterOptionsProps) => {
 
 function App() {
   const convert = useMemo(() => new Convert(), []);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const editorRef = useRef<any>(null);
+    const [output, setOutput] = useState("");
+    const [wasmLoaded, setWasmLoaded] = useState(false);
+    const [editorLoaded, setEditorLoaded] = useState(false);
+    const [printer, setPrinter] = useState(Printer.Concrete);
 
   useEffect(() => {
     // Load the wasm module
@@ -158,9 +164,6 @@ function App() {
       setWasmLoaded(true)
     });
   }, []);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const editorRef = useRef<any>(null);
 
   const editorMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
@@ -222,18 +225,16 @@ function App() {
     } else {
       editor.setValue(WELCOME_TEXT);
     }
+    setEditorLoaded(true);
   }
 
-  const [output, setOutput] = useState("");
-  const [wasmLoaded, setWasmLoaded] = useState(false);
-  const [printer, setPrinter] = useState(Printer.Concrete);
   
   const printerChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setPrinter(event.target.value as Printer);
   }
 
   useEffect(() => {
-    if (editorRef.current === null) {
+    if (!wasmLoaded || !editorLoaded || editorRef.current === null) {
       return;
     }
 
@@ -245,7 +246,7 @@ function App() {
     } catch (error) {
       setOutput(convert.toHtml((error as string) ?? ""));
     }
-  }, [printer, convert]);
+  }, [printer, convert, wasmLoaded, editorLoaded]);
 
   const editorChange: OnChange = (value, event) => {
     try {
