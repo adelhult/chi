@@ -29,8 +29,14 @@ equals (add zero three) three
 -- (each time the contents of the editor changes).
 
 
--- if you want to save your program you can create
+-- if you want to share your program you can create
 -- a Github Gist and open it by adding ?gist=<gist id> to the URL.
+
+
+--- TODOS ---
+-- Support some more convenient syntax: trailing commas, trailing semicolons, multiline comments etc.
+-- Improve runtime error messages (programs that don't evaluate to a value)
+-- Improve the abstract syntax pretty printer
 `;
 
 export default WELCOME_TEXT;
