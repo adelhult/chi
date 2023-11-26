@@ -4,6 +4,7 @@ mod error;
 mod eval;
 mod lexer;
 mod parser;
+mod pretty;
 
 #[cfg(test)]
 mod eval_tests;
@@ -27,7 +28,7 @@ pub fn run(source: &str) -> Result<String, String> {
             // TODO: Add nicer evaulation errors, also using ariadne
             Err(eval_error) => Err(format!(r#"<span class="error">{eval_error}</span>"#)),
             // TODO: Add pretty printer for expressions (and the option to choose between abstract and concrete syntax)
-            Ok(value) => Ok(format!("{value:#?}")),
+            Ok(value) => Ok(pretty::concrete(&value)),
         },
         Err(parse_errors) => {
             let mut output = Vec::<u8>::new();

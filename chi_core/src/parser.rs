@@ -13,12 +13,6 @@ pub struct Constructor(pub(crate) String);
 #[derive(Debug, PartialEq, Clone)]
 pub struct Variable(pub(crate) String);
 
-impl fmt::Display for Variable {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
 #[derive(Debug, PartialEq, Clone)]
 pub struct Branch(
     pub(crate) Constructor,
@@ -133,4 +127,16 @@ where
     });
 
     program.then_ignore(end())
+}
+
+impl fmt::Display for Variable {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl fmt::Display for Constructor {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
 }
