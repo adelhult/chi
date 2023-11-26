@@ -89,6 +89,6 @@ fn precedence(expr: &Expr) -> u8 {
     }
 }
 
-fn abstr(expr: &Expr) -> String {
-    todo!()
+pub fn abstr(expr: &Expr) -> String {
+    "TODO".to_string()
 }

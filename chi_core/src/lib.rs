@@ -17,7 +17,7 @@ pub use parser::{parse, Expr, Program};
 
 /// A high-level function that runs the parser, evaluator and also generates nice errors reports
 /// for more control, see `parse` and `eval`.
-pub fn run(source: &str) -> Result<String, String> {
+pub fn run(source: &str, printer: Printer) -> Result<String, String> {
     // Only the most recent commit of ariadne handles empty sources correctly, so we ignore empty files
     if source.is_empty() {
         return Err("Empty file".into());
@@ -27,8 +27,11 @@ pub fn run(source: &str) -> Result<String, String> {
         Ok(program) => match eval(program) {
             // TODO: Add nicer evaulation errors, also using ariadne
             Err(eval_error) => Err(format!(r#"<span class="error">{eval_error}</span>"#)),
-            // TODO: Add pretty printer for expressions (and the option to choose between abstract and concrete syntax)
-            Ok(value) => Ok(pretty::concrete(&value)),
+            Ok(value) => Ok(match printer {
+                Printer::Concrete => pretty::concrete(&value),
+                Printer::Abstract => pretty::abstr(&value),
+                Printer::Debug => format!("{value:#?}"),
+            }),
         },
         Err(parse_errors) => {
             let mut output = Vec::<u8>::new();
@@ -58,7 +61,22 @@ pub fn run(source: &str) -> Result<String, String> {
     }
 }
 
-/*
-TODO:
-- Add wasm bindings
-*/
+#[derive(Clone, Copy)]
+pub enum Printer {
+    Concrete,
+    Abstract,
+    Debug,
+}
+
+impl TryFrom<&str> for Printer {
+    type Error = ();
+
+    fn try_from(value: &str) -> Result<Self, ()> {
+        match value {
+            "concrete" => Ok(Printer::Concrete),
+            "abstract" => Ok(Printer::Abstract),
+            "debug" => Ok(Printer::Debug),
+            _ => Err(()),
+        }
+    }
+}

@@ -1,5 +1,5 @@
 import { Editor, OnChange, OnMount } from "@monaco-editor/react";
-import {useState, useEffect, useMemo} from "react";
+import {useState, useEffect, useMemo, useRef} from "react";
 import init, {run} from "chi_web";
 import styled from "styled-components";
 import Convert from "ansi-to-html";
@@ -81,6 +81,71 @@ const Output = styled.div`
   }
 `;
 
+const Options = styled.div`
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+
+  & div {
+    padding: 0;
+  }
+
+  & label {
+    user-select: none;
+  }
+`
+
+enum Printer {
+  Concrete = "concrete", 
+  Abstract = "abstract",
+  Debug = "debug"
+}
+
+type PrinterOptionsProps = {
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  value: Printer;
+}
+
+const PrinterOptions= ({onChange, value}: PrinterOptionsProps) => {
+  return <Options>
+    <div>
+      <input
+          type="radio"
+          name="Concrete"
+          value={Printer.Concrete as string}
+          id="concrete"
+          checked={value === Printer.Concrete}
+          onChange={onChange}
+        />
+        <label htmlFor="concrete">Concrete</label>
+    </div>
+
+    <div>
+      <input
+        type="radio"
+        name="Abstract"
+        value={Printer.Abstract as string}
+        id="abstract"
+        checked={value === Printer.Abstract}
+        onChange={onChange}
+      />
+      <label htmlFor="abstract">Abstract</label>
+    </div>
+    <div>
+      <input
+        type="radio"
+        name="Debug"
+        value={Printer.Debug as string}
+        id="debug"
+        checked={value === Printer.Debug}
+        onChange={onChange}
+      />
+      <label htmlFor="debug">Debug</label>
+    </div>
+  </Options>
+}
+
+
 function App() {
   const convert = useMemo(() => new Convert(), []);
 
@@ -91,7 +156,12 @@ function App() {
     });
   }, []);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const editorRef = useRef<any>(null);
+
   const editorMount: OnMount = (editor, monaco) => {
+    editorRef.current = editor;
+
     // Once the editor has mounted, check if there is a gist id in the url
     // if so, load the gist otherwise show the welcome text
     const params = new URLSearchParams(window.location.search);
@@ -102,18 +172,39 @@ function App() {
       editor.setValue(WELCOME_TEXT);
     }
   }
+
+  const [output, setOutput] = useState("");
+  const [wasmLoaded, setWasmLoaded] = useState(false);
+  const [printer, setPrinter] = useState(Printer.Concrete);
   
+  const printerChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setPrinter(event.target.value as Printer);
+  }
+
+  useEffect(() => {
+    if (editorRef.current === null) {
+      return;
+    }
+
+    const text = editorRef.current.getValue();
+    
+    try {
+      const result = run(text ?? " ", printer as string);
+      setOutput(result);
+    } catch (error) {
+      setOutput(convert.toHtml((error as string) ?? ""));
+    }
+  }, [printer, convert]);
+
   const editorChange: OnChange = (value, event) => {
     try {
-      const result = run(value ?? " ");
+      const result = run(value ?? " ", printer as string);
       setOutput(result);
     } catch (error) {
       setOutput(convert.toHtml((error as string) ?? ""));
     }
   };
 
-  const [output, setOutput] = useState("");
-  const [wasmLoaded, setWasmLoaded] = useState(false);
   return wasmLoaded && (
     <>
     <Nav>
@@ -130,7 +221,10 @@ function App() {
     <MainView>
     <Editor height="calc(100vh - 70px)" width="60vw" defaultLanguage="" onChange={editorChange} onMount={editorMount}/>
     <Output>
-      <div>Output</div>
+      <div>
+        Output
+        <PrinterOptions value={printer} onChange={printerChange}/>
+      </div>
       <pre dangerouslySetInnerHTML={{__html: output}}></pre>
     </Output>
     </MainView>
