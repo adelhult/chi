@@ -5,6 +5,8 @@ use crate::{
 use std::fmt::Write;
 
 // Pretty printers for the concrete and abstract syntax used in the Computability course
+// TODO: these printers are very wasteful with memory, would be a lot nicer if they just wrote to a single mutable buffer
+// instead of creating new strings each recursive call
 
 const INDENT: &'static str = "  ";
 
@@ -90,5 +92,39 @@ fn precedence(expr: &Expr) -> u8 {
 }
 
 pub fn abstr(expr: &Expr) -> String {
-    "TODO".to_string()
+    abstr_expr(expr)
+}
+
+fn abstr_expr(expr: &Expr) -> String {
+    match expr {
+        Apply(e1, e2) => format!("apply ({}) ({})", abstr_expr(e1), abstr_expr(e2)),
+        Lambda(x, e) => format!(r"lambda <u>{x}</u> ({})", abstr_expr(e)),
+        Case(e, branches) => {
+            let branches: Vec<String> = branches.iter().map(abstr_branch).collect();
+            format!("case ({}) ({})", abstr_expr(e), abstr_list(&branches))
+        }
+        Rec(x, e) => format!("rec <u>{x}</u> ({})", abstr_expr(e)),
+        Var(x) => format!("var <u>{x}</u>"),
+        Const(c, es) => {
+            let es: Vec<String> = es.iter().map(|e| abstr_expr(e)).collect();
+            format!("const <u>{c}</u> {es}", es = abstr_list(&es))
+        }
+    }
+}
+
+fn abstr_list(xs: &[String]) -> String {
+    if let Some(x) = xs.get(0) {
+        format!("(cons ({x}) {xs})", xs = abstr_list(&xs[1..]))
+    } else {
+        "nil".to_string()
+    }
+}
+
+fn abstr_branch(Branch(c, vars, e): &Branch) -> String {
+    let vars: Vec<String> = vars.iter().map(|x| format!("<u>{x}</u>")).collect();
+    format!(
+        "branch <u>{c}</u> {vars} ({e})",
+        vars = abstr_list(&vars),
+        e = abstr_expr(e)
+    )
 }
