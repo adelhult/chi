@@ -15,10 +15,10 @@ const MainView = styled.main`
 const Nav = styled.nav`
   box-sizing: border-box;
   overflow: auto;
-  height: 70px;
+  height: 55px;
   padding-left: 1rem;
-  border-bottom: 1px solid #beb3a8;
-  background: #FFFCF9;
+  background:#27282c;
+  color: #ffffff;
   display: flex;
   align-items: center;
   gap: 3rem;
@@ -37,28 +37,30 @@ const Nav = styled.nav`
 const Logo = styled.div`
   display: inline-flex;
   align-items: center;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   gap: 0.3rem;
   
   & .chi {
     position: relative;
     font-family: 'Noto Serif', serif;
-    font-size: 3rem;
-    bottom: 0.6rem;
+    font-size: 2.3rem;
+    bottom: 0.45rem;
   }
 `
 
 const Output = styled.div`
+  background: #f8f7f4;
   box-sizing: border-box;
   position: relative;
   padding: 0;
   margin: 0;
-  height: calc(100vh - 70px);
+  height: calc(100vh - 55px);
   width: 40vw;
   display: flex;
   flex-direction: column;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
+  border-left: 1px solid #d3d2d0;
 
   & div {
     padding-bottom: 0.5rem;
@@ -66,7 +68,7 @@ const Output = styled.div`
   }
 
   & pre {
-    border-top: 1px solid #beb3a8;
+    border-top: 1px solid #d3d2d0;
     overflow: auto;
     margin: 0;
     padding: 0;
@@ -219,10 +221,17 @@ function App() {
       </ol>
     </Nav>
     <MainView>
-    <Editor height="calc(100vh - 70px)" width="60vw" defaultLanguage="" onChange={editorChange} onMount={editorMount}/>
+    <Editor
+      height="calc(100vh - 55px)"
+      width="60vw"
+      defaultLanguage=""
+      onChange={editorChange}
+      onMount={editorMount}
+      options={{minimap: {enabled: false}}}
+    />
     <Output>
       <div>
-        Output
+        <strong>Output</strong>
         <PrinterOptions value={printer} onChange={printerChange}/>
       </div>
       <pre dangerouslySetInnerHTML={{__html: output}}></pre>
