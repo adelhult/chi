@@ -10,6 +10,8 @@ mod pretty;
 mod eval_tests;
 #[cfg(test)]
 mod parser_tests;
+#[cfg(test)]
+mod substitution_tests;
 
 pub use error::Error;
 pub use eval::eval;

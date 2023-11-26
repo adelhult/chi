@@ -18,7 +18,7 @@ fn lookup(const_name: &Constructor, branches: &[Branch]) -> Option<Branch> {
         .cloned()
 }
 
-fn substitute(var: &Variable, replacement: &Expr, expr: Expr) -> Expr {
+pub fn substitute(var: &Variable, replacement: &Expr, expr: Expr) -> Expr {
     match expr {
         Apply(e1, e2) => Apply(
             Box::new(substitute(var, replacement, *e1)),
