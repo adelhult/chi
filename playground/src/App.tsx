@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape */
 import { Editor, OnChange, OnMount } from "@monaco-editor/react";
 import {useState, useEffect, useMemo, useRef} from "react";
 import init, {run} from "chi_web";
@@ -164,6 +165,54 @@ function App() {
   const editorMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
 
+    // register the Chi language
+    // TODO: This should really move someplace else, but I'm having trouble with the
+    // typescript definitions...
+    monaco.languages.register({ id: "chi" });
+    monaco.languages.setMonarchTokensProvider("chi", {
+      keywords: [
+        "case",
+        "of",
+        "rec",
+        "let",
+      ],
+    
+      operators: [
+        "->",
+        "=",
+        "\\",
+      ],
+    
+      // we include these common regular expressions
+      symbols: /[=><!~?:&|+\-*\/\^%]+/,
+    
+      // The main tokenizer for our languages
+      tokenizer: {
+        root: [
+          // keywords and variables
+          [/[a-z_$][\w$]*/, {
+            cases: { "@keywords": "keyword", "@default": "identifier" },
+          }],
+          [/[A-Z][\w\$]*/, "type.identifier"], // Constructors
+    
+          // whitespace
+          { include: "@whitespace" },
+    
+          // delimiters and operators
+          [/[{}()]/, "@brackets"],
+          [/[<>](?!@symbols)/, "@brackets"],
+          [/@symbols/, { cases: { "@operators": "operator", "@default": "" } }],
+    
+          [/[;,.]/, "delimiter"],
+        ],
+    
+        whitespace: [
+          [/(^--.*$)/, "comment"],
+          [/[ \t\r\n]+/, "white"],
+        ],
+      },
+    });
+
     // Once the editor has mounted, check if there is a gist id in the url
     // if so, load the gist otherwise show the welcome text
     const params = new URLSearchParams(window.location.search);
@@ -224,7 +273,7 @@ function App() {
     <Editor
       height="calc(100vh - 55px)"
       width="60vw"
-      defaultLanguage=""
+      defaultLanguage="chi"
       onChange={editorChange}
       onMount={editorMount}
       options={{minimap: {enabled: false}}}
