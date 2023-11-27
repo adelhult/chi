@@ -34,7 +34,7 @@ equals (add zero three) three
 
 
 --- TODOS ---
--- Support some more convenient syntax: trailing commas, trailing semicolons, multiline comments etc.
+-- Support some more convenient syntax: multiline comments etc.
 -- Improve runtime error messages (programs that don't evaluate to a value)
 -- Improve the abstract syntax pretty printer
 `;

@@ -21,6 +21,11 @@ fn constructor_list() {
 }
 
 #[test]
+fn constructor_list_trailing() {
+    parse(r"Cons(Zero(), Cons(Suc(Zero())), Nil(),)").unwrap();
+}
+
+#[test]
 fn lambda() {
     parse(r"\x. x").unwrap();
 }
@@ -47,6 +52,18 @@ fn case() {
             Foo() -> y;
             Bar() -> z;
             Baz(a,b,c) -> d
+        }
+    "#,
+    )
+    .unwrap();
+}
+
+#[test]
+fn case_trailing() {
+    parse(
+        r#"
+        case x of {
+            Foo() -> y;
         }
     "#,
     )

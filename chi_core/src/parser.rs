@@ -63,6 +63,7 @@ where
         let args = expr
             .clone()
             .separated_by(just(Token::Comma))
+            .allow_trailing()
             .collect::<Vec<_>>();
 
         let constructor = constructor_name
@@ -72,6 +73,7 @@ where
         let vars = var_name
             .clone()
             .separated_by(just(Token::Comma))
+            .allow_trailing()
             .collect::<Vec<_>>();
 
         let branch = constructor_name
@@ -86,6 +88,7 @@ where
             .then(
                 branch
                     .separated_by(just(Token::Semicolon))
+                    .allow_trailing()
                     .collect::<Vec<Branch>>()
                     .delimited_by(just(Token::LCurly), just(Token::RCurly)),
             )
