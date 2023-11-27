@@ -1,6 +1,6 @@
 use crate::{
     parser::Branch,
-    Expr::{self, *},
+    MetaExpr::{self, *},
 };
 use std::fmt::Write;
 
@@ -10,11 +10,11 @@ use std::fmt::Write;
 
 const INDENT: &'static str = "  ";
 
-pub fn concrete(expr: &Expr) -> String {
+pub fn concrete(expr: &MetaExpr) -> String {
     concrete_expr(expr, 0, 0)
 }
 
-fn concrete_expr(expr: &Expr, indent: usize, precedence_lvl: u8) -> String {
+fn concrete_expr(expr: &MetaExpr, indent: usize, precedence_lvl: u8) -> String {
     let mut s = String::new();
 
     let current_precedence = precedence(expr);
@@ -80,7 +80,7 @@ fn concrete_branches(branches: &Vec<Branch>, indent: usize) -> String {
     s
 }
 
-fn precedence(expr: &Expr) -> u8 {
+fn precedence(expr: &MetaExpr) -> u8 {
     match expr {
         Apply(..) => 1,
         Lambda(..) => 0,
@@ -91,11 +91,11 @@ fn precedence(expr: &Expr) -> u8 {
     }
 }
 
-pub fn abstr(expr: &Expr) -> String {
+pub fn abstr(expr: &MetaExpr) -> String {
     abstr_expr(expr)
 }
 
-fn abstr_expr(expr: &Expr) -> String {
+fn abstr_expr(expr: &MetaExpr) -> String {
     match expr {
         Apply(e1, e2) => format!("apply ({}) ({})", abstr_expr(e1), abstr_expr(e2)),
         Lambda(x, e) => format!(r"lambda <u>{x}</u> ({})", abstr_expr(e)),

@@ -3,15 +3,25 @@
 /// and also the Agda specification: https://www.cse.chalmers.se/~nad/listings/chi/Chi.html
 use crate::{
     parser::{Branch, Constructor, Variable},
-    Error,
-    Expr::{self, *},
-    Program,
+    Error, MetaExpr, Program,
 };
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum Expr {
+    Apply(Box<Self>, Box<Self>),
+    Lambda(Variable, Box<Self>),
+    Case(Box<Self>, Vec<Branch<Self>>),
+    Rec(Variable, Box<Self>),
+    Var(Variable),
+    Const(Constructor, Vec<Self>),
+}
+
+use Expr::*;
 
 // NOTE: This is of course a very low limit, I should make it possible to set this dynamically when calling eval
 const MAX_DEPTH: u32 = 250;
 
-fn lookup(const_name: &Constructor, branches: &[Branch]) -> Option<Branch> {
+fn lookup(const_name: &Constructor, branches: &[Branch<Expr>]) -> Option<Branch<Expr>> {
     branches
         .iter()
         .find(|Branch(c, ..)| c == const_name)
@@ -67,7 +77,11 @@ pub fn substitute(var: &Variable, replacement: &Expr, expr: Expr) -> Expr {
     }
 }
 
-fn substitute_branch(var: &Variable, replacement: &Expr, Branch(c, xs, e): Branch) -> Branch {
+fn substitute_branch(
+    var: &Variable,
+    replacement: &Expr,
+    Branch(c, xs, e): Branch<Expr>,
+) -> Branch<Expr> {
     // Check if the branch binds to the same variable name, if not we recursivly continue with the substitution
     if xs.contains(&var) {
         Branch(c, xs, e)
@@ -77,7 +91,7 @@ fn substitute_branch(var: &Variable, replacement: &Expr, Branch(c, xs, e): Branc
 }
 
 // Convert a meta program into a single Chi expression using substitution
-fn substitute_program(var: &Variable, replacement: &Expr, program: Program) -> Program {
+fn substitute_program(var: &Variable, replacement: &MetaExpr, program: Program) -> Program {
     match program {
         Program::Let(x, rhs, rest) => Program::Let(
             x,

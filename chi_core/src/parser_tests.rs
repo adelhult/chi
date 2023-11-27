@@ -1,4 +1,4 @@
-use crate::{parse, parser::Variable, Expr, Program};
+use crate::{parse, parser::Variable, MetaExpr, Program};
 
 #[test]
 fn variable() {
@@ -34,11 +34,11 @@ fn lambda() {
 fn lambda_nested() {
     assert_eq!(
         parse(r"\x.\y. y").unwrap(),
-        Program::Expr(Expr::Lambda(
+        Program::Expr(MetaExpr::Lambda(
             Variable("x".to_string()),
-            Box::new(Expr::Lambda(
+            Box::new(MetaExpr::Lambda(
                 Variable("y".to_string()),
-                Box::new(Expr::Var(Variable("y".to_string())))
+                Box::new(MetaExpr::Var(Variable("y".to_string())))
             ))
         ))
     )

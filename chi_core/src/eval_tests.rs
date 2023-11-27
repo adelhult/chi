@@ -1,7 +1,7 @@
 use crate::{
     eval, parse,
     parser::{Constructor, Variable},
-    Expr,
+    MetaExpr,
 };
 
 // The following programs should fail to terminate:
@@ -48,7 +48,7 @@ fn case_subst_order() {
     let expr = parse(r"case C(D(),E()) of { C(x, x) -> x } ").unwrap();
     assert_eq!(
         eval(expr).unwrap(),
-        Expr::Const(Constructor("E".into()), vec![])
+        MetaExpr::Const(Constructor("E".into()), vec![])
     );
 }
 
@@ -57,7 +57,7 @@ fn case_and_application() {
     let expr = parse(r"case C(\x.x, Zero()) of { C(f, x) -> f x }").unwrap();
     assert_eq!(
         eval(expr).unwrap(),
-        Expr::Const(Constructor("Zero".into()), vec![])
+        MetaExpr::Const(Constructor("Zero".into()), vec![])
     );
 }
 
@@ -66,7 +66,7 @@ fn case_and_application2() {
     let expr = parse(r"case (\x.x) C() of { C() -> C() } ").unwrap();
     assert_eq!(
         eval(expr).unwrap(),
-        Expr::Const(Constructor("C".into()), vec![])
+        MetaExpr::Const(Constructor("C".into()), vec![])
     );
 }
 
@@ -76,7 +76,7 @@ fn application() {
     let x = Variable("x".into());
     assert_eq!(
         eval(expr).unwrap(),
-        Expr::Lambda(x.clone(), Box::new(Expr::Var(x)))
+        MetaExpr::Lambda(x.clone(), Box::new(MetaExpr::Var(x)))
     );
 }
 
@@ -88,7 +88,7 @@ fn application_left_assoc() {
     "#,
     );
     let expr = eval(program.unwrap()).unwrap();
-    assert_eq!(expr, Expr::Const(Constructor("Bar".into()), vec![]))
+    assert_eq!(expr, MetaExpr::Const(Constructor("Bar".into()), vec![]))
 }
 
 #[test]
@@ -109,5 +109,5 @@ fn sample_program_equiv() {
     "#;
     let program = dbg!(parse(src)).unwrap();
     let expr = dbg!(eval(program)).unwrap();
-    assert_eq!(expr, Expr::Const(Constructor("False".into()), vec![]))
+    assert_eq!(expr, MetaExpr::Const(Constructor("False".into()), vec![]))
 }

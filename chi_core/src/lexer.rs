@@ -56,6 +56,9 @@ pub enum Token<'a> {
     #[token("->")]
     Arrow,
 
+    #[token("\"")]
+    Quote,
+
     #[regex(r"--[^\n]*", logos::skip)]
     Comment,
 }
@@ -81,6 +84,7 @@ impl<'a> fmt::Display for Token<'a> {
             Token::Error => write!(f, "<error>"),
             Token::Comment => write!(f, "<comment>"),
             Token::Let => write!(f, "let"),
+            Token::Quote => write!(f, "\""),
         }
     }
 }

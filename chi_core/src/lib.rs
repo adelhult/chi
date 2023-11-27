@@ -1,5 +1,6 @@
 use ariadne::{Color, Label, Report, ReportKind, Source};
 
+mod coder;
 mod error;
 mod eval;
 mod lexer;
@@ -14,8 +15,8 @@ mod parser_tests;
 mod substitution_tests;
 
 pub use error::Error;
-pub use eval::eval;
-pub use parser::{parse, Expr, Program};
+pub use eval::{eval, Expr};
+pub use parser::{parse, MetaExpr, Program};
 
 /// A high-level function that runs the parser, evaluator and also generates nice errors reports
 /// for more control, see `parse` and `eval`.
