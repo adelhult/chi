@@ -130,16 +130,17 @@ where
 
         // Note: the grammar makes sure that there is no way to have nested repr(...)
         // for instance, ""bar"" is not repr(repr(bar)), it is just a syntax error
-        let repr = expr
+        let coded_literal = expr
             .clone()
-            .delimited_by(just(Token::Quote), just(Token::Quote));
+            .delimited_by(just(Token::Quote), just(Token::Quote))
+            .map(|e| MetaExpr::Coded(Box::new(CodedLiteral::Expr(e))));
 
         let atom = var
             .or(constructor)
             .or(case)
             .or(lambda)
             .or(rec)
-            .or(repr)
+            .or(coded_literal)
             .or(expr
                 .clone()
                 .delimited_by(just(Token::LParen), just(Token::RParen)));
