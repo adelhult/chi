@@ -3,7 +3,7 @@
 /// and also the Agda specification: https://www.cse.chalmers.se/~nad/listings/chi/Chi.html
 use crate::{
     parser::{Branch, Constructor, Variable},
-    Error, MetaExpr, Program,
+    Error, Program,
 };
 
 #[derive(Debug, PartialEq, Clone)]
@@ -91,7 +91,7 @@ fn substitute_branch(
 }
 
 // Convert a meta program into a single Chi expression using substitution
-fn substitute_program(var: &Variable, replacement: &MetaExpr, program: Program) -> Program {
+fn substitute_program(var: &Variable, replacement: &Expr, program: Program<Expr>) -> Program<Expr> {
     match program {
         Program::Let(x, rhs, rest) => Program::Let(
             x,
@@ -102,14 +102,14 @@ fn substitute_program(var: &Variable, replacement: &MetaExpr, program: Program) 
     }
 }
 
-fn program_to_expr(program: Program) -> Expr {
+fn program_to_expr(program: Program<Expr>) -> Expr {
     match program {
         Program::Let(var, rhs, rest) => program_to_expr(substitute_program(&var, &rhs, *rest)),
         Program::Expr(expr) => expr,
     }
 }
 
-pub fn eval(program: Program) -> Result<Expr, Error> {
+pub fn eval(program: Program<Expr>) -> Result<Expr, Error> {
     let expr = program_to_expr(program);
     eval_expr(expr, 0)
 }

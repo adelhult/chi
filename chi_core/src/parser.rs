@@ -13,6 +13,18 @@ pub struct Constructor(pub(crate) String);
 #[derive(Debug, PartialEq, Clone)]
 pub struct Variable(pub(crate) String);
 
+impl From<&str> for Variable {
+    fn from(value: &str) -> Self {
+        Variable(value.into())
+    }
+}
+
+impl From<&str> for Constructor {
+    fn from(value: &str) -> Self {
+        Constructor(value.into())
+    }
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct Branch<T>(
     pub(crate) Constructor,
@@ -20,6 +32,7 @@ pub struct Branch<T>(
     pub(crate) T,
 );
 
+#[derive(Debug, PartialEq, Clone)]
 pub enum CodedLiteral {
     Expr(MetaExpr),
 }
@@ -34,18 +47,20 @@ pub enum MetaExpr {
     Const(Constructor, Vec<Self>),
     /// Not an actual part of the Chi language, it must be converted to a constructor tree
     /// see the `repr` module
-    Coded(CodedLiteral),
+    Coded(Box<CodedLiteral>),
 }
 
 /// A layer on top of the Chi language that
 /// allows Chi expressions to be assigned to meta variables
 #[derive(Debug, PartialEq, Clone)]
-pub enum Program {
-    Let(Variable, MetaExpr, Box<Self>),
-    Expr(MetaExpr),
+pub enum Program<T> {
+    Let(Variable, T, Box<Self>),
+    Expr(T),
 }
 
-pub fn parse(source: &str) -> Result<Program, Vec<Rich<'_, Token<'_>, SimpleSpan, &str>>> {
+pub fn parse(
+    source: &str,
+) -> Result<Program<MetaExpr>, Vec<Rich<'_, Token<'_>, SimpleSpan, &str>>> {
     let token_iter = Token::lexer(source)
         .spanned()
         // Convert lexer errors into a Token::Error
@@ -57,7 +72,7 @@ pub fn parse(source: &str) -> Result<Program, Vec<Rich<'_, Token<'_>, SimpleSpan
     program_parser().parse(token_stream).into_result()
 }
 
-fn program_parser<'a, I>() -> impl Parser<'a, I, Program, extra::Err<Rich<'a, Token<'a>>>>
+fn program_parser<'a, I>() -> impl Parser<'a, I, Program<MetaExpr>, extra::Err<Rich<'a, Token<'a>>>>
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -96,7 +111,7 @@ where
                 branch
                     .separated_by(just(Token::Semicolon))
                     .allow_trailing()
-                    .collect::<Vec<Branch>>()
+                    .collect::<Vec<Branch<MetaExpr>>>()
                     .delimited_by(just(Token::LCurly), just(Token::RCurly)),
             )
             .map(|(e, branches)| MetaExpr::Case(Box::new(e), branches));

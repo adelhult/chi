@@ -14,6 +14,7 @@ mod parser_tests;
 #[cfg(test)]
 mod substitution_tests;
 
+pub use coder::{replace_coded_literals, StandardCoder};
 pub use error::Error;
 pub use eval::{eval, Expr};
 pub use parser::{parse, MetaExpr, Program};
@@ -27,15 +28,19 @@ pub fn run(source: &str, printer: Printer) -> Result<String, String> {
     }
 
     match parse(source) {
-        Ok(program) => match eval(program) {
-            // TODO: Add nicer evaulation errors, also using ariadne
-            Err(eval_error) => Err(format!(r#"<span class="error">{eval_error}</span>"#)),
-            Ok(value) => Ok(match printer {
-                Printer::Concrete => pretty::concrete(&value),
-                Printer::Abstract => pretty::abstr(&value),
-                Printer::Debug => format!("{value:#?}"),
-            }),
-        },
+        Ok(program) => {
+            let mut coder = StandardCoder::default();
+            let program = replace_coded_literals(program, &mut coder);
+            match eval(program) {
+                // TODO: Add nicer evaulation errors, also using ariadne
+                Err(eval_error) => Err(format!(r#"<span class="error">{eval_error}</span>"#)),
+                Ok(value) => Ok(match printer {
+                    Printer::Concrete => pretty::concrete(&value),
+                    Printer::Abstract => pretty::abstr(&value),
+                    Printer::Debug => format!("{value:#?}"),
+                }),
+            }
+        }
         Err(parse_errors) => {
             let mut output = Vec::<u8>::new();
             for error in parse_errors {

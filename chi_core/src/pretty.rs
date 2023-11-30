@@ -1,6 +1,6 @@
 use crate::{
     parser::Branch,
-    MetaExpr::{self, *},
+    Expr::{self, *},
 };
 use std::fmt::Write;
 
@@ -10,11 +10,11 @@ use std::fmt::Write;
 
 const INDENT: &'static str = "  ";
 
-pub fn concrete(expr: &MetaExpr) -> String {
+pub fn concrete(expr: &Expr) -> String {
     concrete_expr(expr, 0, 0)
 }
 
-fn concrete_expr(expr: &MetaExpr, indent: usize, precedence_lvl: u8) -> String {
+fn concrete_expr(expr: &Expr, indent: usize, precedence_lvl: u8) -> String {
     let mut s = String::new();
 
     let current_precedence = precedence(expr);
@@ -54,7 +54,7 @@ fn concrete_expr(expr: &MetaExpr, indent: usize, precedence_lvl: u8) -> String {
     s
 }
 
-fn concrete_branches(branches: &Vec<Branch>, indent: usize) -> String {
+fn concrete_branches(branches: &Vec<Branch<Expr>>, indent: usize) -> String {
     /*
     Foo() -> Bar();
     Baz() -> Bam()
@@ -80,7 +80,7 @@ fn concrete_branches(branches: &Vec<Branch>, indent: usize) -> String {
     s
 }
 
-fn precedence(expr: &MetaExpr) -> u8 {
+fn precedence(expr: &Expr) -> u8 {
     match expr {
         Apply(..) => 1,
         Lambda(..) => 0,
@@ -91,11 +91,11 @@ fn precedence(expr: &MetaExpr) -> u8 {
     }
 }
 
-pub fn abstr(expr: &MetaExpr) -> String {
+pub fn abstr(expr: &Expr) -> String {
     abstr_expr(expr)
 }
 
-fn abstr_expr(expr: &MetaExpr) -> String {
+fn abstr_expr(expr: &Expr) -> String {
     match expr {
         Apply(e1, e2) => format!("apply ({}) ({})", abstr_expr(e1), abstr_expr(e2)),
         Lambda(x, e) => format!(r"lambda <u>{x}</u> ({})", abstr_expr(e)),
@@ -120,7 +120,7 @@ fn abstr_list(xs: &[String]) -> String {
     }
 }
 
-fn abstr_branch(Branch(c, vars, e): &Branch) -> String {
+fn abstr_branch(Branch(c, vars, e): &Branch<Expr>) -> String {
     let vars: Vec<String> = vars.iter().map(|x| format!("<u>{x}</u>")).collect();
     format!(
         "branch <u>{c}</u> {vars} ({e})",

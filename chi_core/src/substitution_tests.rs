@@ -1,7 +1,7 @@
 use crate::{
     eval::substitute,
     parser::{Branch, Constructor, Variable},
-    MetaExpr::*,
+    Expr::*,
 };
 
 #[test]
