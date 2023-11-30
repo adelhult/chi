@@ -223,7 +223,7 @@ function App() {
     if (gistId) {
       const text = readGist(gistId).then(text => editor.setValue(text));
     } else {
-      editor.setValue(WELCOME_TEXT);
+      editor.setValue(localStorage.getItem("content") ?? WELCOME_TEXT);
     }
     setEditorLoaded(true);
   }
@@ -255,6 +255,8 @@ function App() {
     } catch (error) {
       setOutput(convert.toHtml((error as string) ?? ""));
     }
+    
+      localStorage.setItem("content", value ?? "");
   };
 
   return wasmLoaded && (
