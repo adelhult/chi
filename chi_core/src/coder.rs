@@ -53,7 +53,7 @@ pub trait Coder {
     fn code_variable(&mut self, c: Variable) -> Expr;
     fn code_literal(&mut self, literal: CodedLiteral) -> Expr;
     fn code_natural(&self, n: usize) -> Expr;
-    fn defined_symbols(&self) -> HashMap<String, Expr>;
+    fn defined_symbols(&self) -> Vec<(String, Expr)>;
     fn code_list<I>(&mut self, es: I) -> Expr
     where
         I: Iterator<Item = Expr>;
@@ -192,10 +192,18 @@ impl Coder for StandardCoder {
         }
     }
 
-    fn defined_symbols(&self) -> HashMap<String, Expr> {
-        self.previous_symbols
+    fn defined_symbols(&self) -> Vec<(String, Expr)> {
+        let mut symbols: Vec<_> = self
+            .previous_symbols
             .iter()
-            .map(|(symbol, n)| (symbol.clone(), self.code_natural(*n)))
+            .map(|(symbol, n)| (symbol.to_owned(), *n))
+            .collect();
+
+        symbols.sort_by_key(|(_, n)| *n);
+
+        symbols
+            .into_iter()
+            .map(|(symbol, n)| (symbol, self.code_natural(n)))
             .collect()
     }
 }
