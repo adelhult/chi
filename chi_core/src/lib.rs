@@ -5,7 +5,7 @@ mod error;
 mod eval;
 mod lexer;
 mod parser;
-mod pretty;
+pub mod pretty;
 
 #[cfg(test)]
 mod eval_tests;
@@ -14,14 +14,14 @@ mod parser_tests;
 #[cfg(test)]
 mod substitution_tests;
 
-pub use coder::{replace_coded_literals, StandardCoder};
+pub use coder::{replace_coded_literals, Coder, StandardCoder};
 pub use error::Error;
 pub use eval::{eval, Expr};
 pub use parser::{parse, MetaExpr, Program};
 
 /// A high-level function that runs the parser, evaluator and also generates nice errors reports
 /// for more control, see `parse` and `eval`.
-pub fn run(source: &str, printer: Printer) -> Result<String, String> {
+pub fn run(source: &str, printer: Printer) -> Result<(String, impl Coder), String> {
     // Only the most recent commit of ariadne handles empty sources correctly, so we ignore empty files
     if source.is_empty() {
         return Err("Empty file".into());
@@ -35,9 +35,9 @@ pub fn run(source: &str, printer: Printer) -> Result<String, String> {
                 // TODO: Add nicer evaulation errors, also using ariadne
                 Err(eval_error) => Err(format!(r#"<span class="error">{eval_error}</span>"#)),
                 Ok(value) => Ok(match printer {
-                    Printer::Concrete => pretty::concrete(&value),
-                    Printer::Abstract => pretty::abstr(&value),
-                    Printer::Debug => format!("{value:#?}"),
+                    Printer::Concrete => (pretty::concrete(&value), coder),
+                    Printer::Abstract => (pretty::abstr(&value), coder),
+                    Printer::Debug => (format!("{value:#?}"), coder),
                 }),
             }
         }
@@ -69,7 +69,7 @@ pub fn run(source: &str, printer: Printer) -> Result<String, String> {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Printer {
     Concrete,
     Abstract,

@@ -52,7 +52,8 @@ pub trait Coder {
     fn code_constructor(&mut self, c: Constructor) -> Expr;
     fn code_variable(&mut self, c: Variable) -> Expr;
     fn code_literal(&mut self, literal: CodedLiteral) -> Expr;
-    fn code_natural(&mut self, n: usize) -> Expr;
+    fn code_natural(&self, n: usize) -> Expr;
+    fn defined_symbols(&self) -> HashMap<String, Expr>;
     fn code_list<I>(&mut self, es: I) -> Expr
     where
         I: Iterator<Item = Expr>;
@@ -172,7 +173,7 @@ impl Coder for StandardCoder {
         }
     }
 
-    fn code_natural(&mut self, n: usize) -> Expr {
+    fn code_natural(&self, n: usize) -> Expr {
         if n == 0 {
             Expr::Const("Zero".into(), vec![])
         } else {
@@ -189,5 +190,12 @@ impl Coder for StandardCoder {
         } else {
             Expr::Const("Nil".into(), vec![])
         }
+    }
+
+    fn defined_symbols(&self) -> HashMap<String, Expr> {
+        self.previous_symbols
+            .iter()
+            .map(|(symbol, n)| (symbol.clone(), self.code_natural(*n)))
+            .collect()
     }
 }

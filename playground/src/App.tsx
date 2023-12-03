@@ -82,6 +82,10 @@ const Output = styled.div`
       color: #A00;
     }
   }
+
+  & .symbols {
+    opacity: 0.7;
+  }
 `;
 
 const Options = styled.div`
